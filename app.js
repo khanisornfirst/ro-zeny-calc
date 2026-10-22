@@ -17,8 +17,11 @@ const state = {
   useCraft: saved.useCraft || {}, // วัตถุดิบที่ให้ใช้ต้นทุนทำเองแทนราคาตลาด
   showOre: saved.showOre || false,  // เปิดทางแลกแร่เป็นหินด้วย
   ench: saved.ench || {},     // ตัวเลือก enchant: { ชื่อ: { s4, s3, from, to, coupon } }
+  tab: saved.tab === "enchant" ? "enchant" : "reform",
+  last: saved.last || {},     // ไอเทมล่าสุดของแต่ละแท็บ
   type: "all",
 };
+const TABS = { reform: "Reform LT", enchant: "Enchant" };
 
 // Small in-game icons from divine-pride by item ID; an LT item looks like its base item
 const iconIds = { ...window.ICON_IDS };
@@ -30,6 +33,7 @@ const $ = s => document.querySelector(s);
 const fmt = (n, d = 0) => (isFinite(n) ? n : 0).toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: d });
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const allItems = () => [...window.RECIPES, ...(window.ENCHANTS || []), ...state.custom];
+const tabItems = () => state.tab === "enchant" ? window.ENCHANTS || [] : [...window.RECIPES, ...state.custom];
 const findItem = name => allItems().find(i => i.name === name);
 
 function slot(name, opts = {}) {
@@ -41,14 +45,18 @@ function slot(name, opts = {}) {
 }
 
 function renderTypes() {
-  const types = ["all", ...new Set(allItems().map(i => i.type || "อื่นๆ"))];
+  $("#tabs").innerHTML = Object.entries(TABS).map(([k, label]) =>
+    `<button type="button" role="tab" data-tab="${k}" aria-selected="${k === state.tab}">${label}</button>`).join("");
+  $("#addBox").hidden = state.tab === "enchant";
+  const types = ["all", ...new Set(tabItems().map(i => i.type || "อื่นๆ"))];
+  $("#types").hidden = types.length < 3;
   $("#types").innerHTML = types.map(t =>
     `<button type="button" data-type="${esc(t)}" aria-pressed="${t === state.type}">${t === "all" ? "ทั้งหมด" : esc(t)}</button>`).join("");
 }
 
 function renderList() {
   const q = $("#search").value.trim().toLowerCase();
-  const items = allItems().filter(i =>
+  const items = tabItems().filter(i =>
     (state.type === "all" || (i.type || "อื่นๆ") === state.type) &&
     (!q || (i.name + " " + (i.base || "")).toLowerCase().includes(q)));
   $("#list").innerHTML = items.map(i => `<button type="button" data-name="${esc(i.name)}" aria-pressed="${i.name === state.current}">
@@ -57,7 +65,8 @@ function renderList() {
 }
 
 function renderSheet() {
-  const item = findItem(state.current) || findItem("Little Garden-LT") || allItems()[0];
+  const list = tabItems();
+  const item = list.find(i => i.name === state.current) || list.find(i => i.name === "Little Garden-LT") || list[0];
   state.current = item.name;
   if (item.slots) return renderEnchant(item);
   const recipes = item.recipes;
@@ -176,6 +185,12 @@ function renderEnchant(item) {
 function render() { renderTypes(); renderList(); renderSheet(); save() }
 
 $("#list").addEventListener("click", e => { const b = e.target.closest("[data-name]"); if (b) { state.current = b.dataset.name; render() } });
+$("#tabs").addEventListener("click", e => {
+  const b = e.target.closest("[data-tab]"); if (!b || b.dataset.tab === state.tab) return;
+  state.last[state.tab] = state.current;
+  state.tab = b.dataset.tab; state.current = state.last[state.tab] || ""; state.type = "all";
+  $("#search").value = ""; render();
+});
 $("#types").addEventListener("click", e => { const b = e.target.closest("[data-type]"); if (b) { state.type = b.dataset.type; renderTypes(); renderList() } });
 $("#search").addEventListener("input", renderList);
 $("#rate").value = state.rate;

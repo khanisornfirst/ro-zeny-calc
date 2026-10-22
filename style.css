@@ -124,3 +124,7 @@ table.mini th small { display: block; font-weight: 400; font-size: .7rem }
 .enchopts { display: grid; gap: 6px; margin: 4px 0 12px }
 .enchopts .usecraft { flex-wrap: wrap }
 select { background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px }
+.tabs { display: flex; gap: 4px; margin: 0; border-bottom: 2px solid var(--chrome) }
+.tabs button { border-radius: 6px 6px 0 0; border-bottom: 0; padding: 8px 18px; font: 500 .95rem var(--display); background: var(--panel) }
+.tabs button[aria-selected="true"] { background: var(--chrome); color: var(--chrome-fg); border-color: var(--chrome) }
+[hidden] { display: none !important }
