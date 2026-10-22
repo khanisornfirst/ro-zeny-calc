@@ -16,18 +16,20 @@ const state = {
   craft: saved.craft || {},   // แก้สูตรหิน: { ชื่อหิน: { qty, fee, oreQty, oreFee } }
   useCraft: saved.useCraft || {}, // วัตถุดิบที่ให้ใช้ต้นทุนทำเองแทนราคาตลาด
   showOre: saved.showOre || false,  // เปิดทางแลกแร่เป็นหินด้วย
+  ench: saved.ench || {},     // ตัวเลือก enchant: { ชื่อ: { s4, s3, from, to, coupon } }
   type: "all",
 };
 
 // Small in-game icons from divine-pride by item ID; an LT item looks like its base item
 const iconIds = { ...window.ICON_IDS };
 for (const it of window.RECIPES) if (iconIds[it.base] && !iconIds[it.name]) iconIds[it.name] = iconIds[it.base];
+for (const it of window.ENCHANTS || []) if (iconIds[it.icon]) iconIds[it.name] = iconIds[it.icon];
 const iconUrl = name => iconIds[name] ? `https://static.divine-pride.net/images/items/item/${iconIds[name]}.png` : "";
 
 const $ = s => document.querySelector(s);
 const fmt = (n, d = 0) => (isFinite(n) ? n : 0).toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: d });
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const allItems = () => [...window.RECIPES, ...state.custom];
+const allItems = () => [...window.RECIPES, ...(window.ENCHANTS || []), ...state.custom];
 const findItem = name => allItems().find(i => i.name === name);
 
 function slot(name, opts = {}) {
@@ -50,13 +52,14 @@ function renderList() {
     (state.type === "all" || (i.type || "อื่นๆ") === state.type) &&
     (!q || (i.name + " " + (i.base || "")).toLowerCase().includes(q)));
   $("#list").innerHTML = items.map(i => `<button type="button" data-name="${esc(i.name)}" aria-pressed="${i.name === state.current}">
-      ${slot(i.name)}<span>${esc(i.name)}<small>${i.custom ? "ไอเทมของฉัน" : esc((i.type || "") + " · " + i.recipes.map(r => r.grade).filter(Boolean).join(" / "))}</small></span></button>`).join("")
+      ${slot(i.name)}<span>${esc(i.name)}<small>${i.custom ? "ไอเทมของฉัน" : i.slots ? esc(`${i.type} · NPC ${i.npc}`) : esc((i.type || "") + " · " + i.recipes.map(r => r.grade).filter(Boolean).join(" / "))}</small></span></button>`).join("")
     || `<p class="note">ไม่เจอไอเทมนี้</p>`;
 }
 
 function renderSheet() {
   const item = findItem(state.current) || findItem("Little Garden-LT") || allItems()[0];
   state.current = item.name;
+  if (item.slots) return renderEnchant(item);
   const recipes = item.recipes;
   let gi = Math.min(state.grade[item.name] ?? recipes.length - 1, recipes.length - 1);
   const recipe = recipes[gi];
@@ -110,6 +113,66 @@ function renderSheet() {
     ${item.custom ? ` · <button type="button" id="delItem">ลบไอเทมนี้</button>` : ""}</p>`;
 }
 
+// ---------- Enchant อาวุธ Dim Glacier ----------
+function enchOpts(item) {
+  const o = { s4: true, s3: true, from: 0, to: item.levels.length, coupon: false, ...state.ench[item.name] };
+  o.to = Math.max(o.from, o.to);
+  return o;
+}
+
+function renderEnchant(item) {
+  const o = enchOpts(item);
+  const lvName = i => (i === 0 ? "ยังไม่มี" : `Lv${i}`);
+  const steps = [];
+  for (const s of item.slots) if (o[s.id])
+    steps.push({ label: s.label, mats: [...s.mats, o.coupon ? [item.couponName, s.coupon] : [item.brilliantName, s.brilliant]] });
+  for (let i = o.from; i < o.to; i++)
+    steps.push({ label: i === 0 ? "ช่อง 2 การันตี Lv1" : `ช่อง 2 Lv${i} → Lv${i + 1}`, mats: item.levels[i] });
+
+  const need = new Map();
+  for (const st of steps) for (const [n, q] of st.mats) need.set(n, (need.get(n) || 0) + q);
+  const cost = mats => mats.reduce((t, [n, q]) => t + q * (Number(state.prices[n]) || 0), 0);
+  let total = 0, missing = 0;
+  const rows = [...need].map(([name, q]) => {
+    const raw = state.prices[name];
+    if (raw === undefined || raw === "") missing++;
+    const sub = q * (Number(raw) || 0); total += sub;
+    return `<tr>
+      <td><div class="namecell">${slot(name, { pick: true })}<span>${esc(name)}</span></div></td>
+      <td class="r num"><strong>${fmt(q)}</strong></td>
+      <td class="r"><input type="number" class="num" min="0" data-price="${esc(name)}" value="${raw ?? ""}" placeholder="0" aria-label="ราคา ${esc(name)} ต่อชิ้น"></td>
+      <td class="r num">${fmt(sub)}</td></tr>`;
+  }).join("");
+  const baht = total / 1e6 * (Number(state.rate) || 0);
+  const lvOpts = (from, sel, min) => Array.from({ length: item.levels.length + 1 }, (_, i) => i)
+    .filter(i => i >= min).map(i => `<option value="${i}"${i === sel ? " selected" : ""}>${lvName(i)}</option>`).join("");
+  const stepList = steps.map(st => `<li>${esc(st.label)} <span class="muted">· ${fmt(cost(st.mats))} z</span></li>`).join("");
+
+  $("#sheet").innerHTML = `
+    <div class="head">
+      ${slot(item.name, { big: true, pick: true })}
+      <div><h3>${esc(item.name)}</h3><div class="meta"><span class="tag">NPC ${esc(item.npc)}</span><span class="tag">0z ทุกขั้น ใช้แค่วัตถุดิบ</span></div></div>
+    </div>
+    <div class="enchopts">
+      ${item.slots.map(s => `<label class="usecraft"><input type="checkbox" data-ench="${s.id}" ${o[s.id] ? "checked" : ""}> ${esc(s.label)}</label>`).join("")}
+      <label class="usecraft">ช่อง 2 ตอนนี้ <select data-ench="from">${lvOpts(0, o.from, 0)}</select>
+        อัปถึง <select data-ench="to">${lvOpts(0, o.to, o.from)}</select></label>
+      <label class="usecraft"><input type="checkbox" data-ench="coupon" ${o.coupon ? "checked" : ""}> ช่อง 4/3 ใช้ตั๋ว Enchant Coupon แทนขวดส้ม (Brilliant)</label>
+    </div>
+    ${steps.length ? `
+    <div class="tablewrap"><table>
+      <thead><tr><th>วัตถุดิบ</th><th class="r">ต้องใช้ทั้งหมด</th><th class="r">ราคา/ชิ้น (z)</th><th class="r">รวม (z)</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <div class="totals">
+      <div class="tot z"><span>รวมทั้งหมด</span><strong>${fmt(total)} z</strong></div>
+      <div class="tot b"><span>คิดเป็นเงินบาท${state.rate === "" ? " (ยังไม่ได้ใส่เรต)" : ""}</span><strong>฿${fmt(baht, 2)}</strong></div>
+    </div>
+    <h4>แยกตามขั้น</h4><ol class="steps">${stepList}</ol>` : `<p class="note">ยังไม่ได้เลือกขั้นไหนเลย</p>`}
+    <p class="note">${missing ? `ยังไม่ได้ใส่ราคา ${missing} รายการ · ` : ""}ราคาที่กรอกใช้ร่วมกันทุกสูตร
+    · ข้อมูลช่อง 2 จาก <a href="https://ro.gnjoy.in.th/dim-glacier-weapon/" target="_blank" rel="noopener">gnjoy</a></p>`;
+}
+
 function render() { renderTypes(); renderList(); renderSheet(); save() }
 
 $("#list").addEventListener("click", e => { const b = e.target.closest("[data-name]"); if (b) { state.current = b.dataset.name; render() } });
@@ -122,6 +185,10 @@ $("#sheet").addEventListener("change", e => {
   const t = e.target;
   if (t.dataset.price) state.prices[t.dataset.price] = t.value === "" ? "" : Number(t.value);
   if (t.id === "crafts") state.counts[state.current] = Number(t.value) || 1;
+  if (t.dataset.ench) {
+    const o = (state.ench[state.current] ||= {}), k = t.dataset.ench;
+    o[k] = t.type === "checkbox" ? t.checked : Number(t.value);
+  }
   render();
 });
 $("#sheet").addEventListener("click", e => {

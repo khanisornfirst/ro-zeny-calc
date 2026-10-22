@@ -7,3 +7,6 @@
 
 ปุ่ม "⚒ ทำเอง" ข้าง Accessory Enhancement Stone ในหน้าสูตร เปิดส่วนคิดต้นทุนทำหินเองที่ NPC Ore Researcher
 (สูตรทำหินอยู่ใน `crafts.js` ตัวเลขตั้งต้นจาก iRO Wiki แก้ได้ในหน้าเว็บ)
+
+"Dim Glacier Weapon Enchant" ในรายการไอเทม คิดวัตถุดิบ enchant อาวุธ Dim Glacier (ช่อง 4, ช่อง 3, ช่อง 2 Lv1–Lv5)
+ข้อมูลอยู่ใน `enchants.js` ค่าอัปเกรดช่อง 2 จาก https://ro.gnjoy.in.th/dim-glacier-weapon/
