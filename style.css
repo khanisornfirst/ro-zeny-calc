@@ -95,3 +95,25 @@ td input { width: 130px; text-align: right }
 .rate input { width: 110px }
 .note { font-size: .8rem; color: var(--muted); margin: 0 }
 .matrow { display: grid; grid-template-columns: 1fr 80px 32px; gap: 6px }
+
+/* Sub-calculator for crafting Enhancement Stones yourself */
+.craftbtn { display: inline-block; margin-left: 8px; font-size: .72rem; padding: 1px 8px; border-radius: 99px; background: var(--zeny-soft); color: var(--zeny); border-color: transparent; white-space: nowrap }
+.madetag { display: block; font-size: .7rem; color: var(--zeny) }
+.muted { color: var(--muted); font-weight: 400 }
+dialog#craft { padding: 0; width: min(760px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); color: var(--fg) }
+dialog#craft::backdrop { background: rgb(10 14 24 / .55) }
+dialog#craft > h2 { display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1 }
+#craftClose { background: none; border: 0; color: inherit; font-size: 1.2rem; line-height: 1; padding: 0 4px }
+#craftBody h4 { margin: 6px 0 0; font: 500 .95rem var(--display) }
+#craftBody h4 small { font: .75rem var(--body) }
+table.mini { min-width: 0 }
+table.mini td input { width: 120px }
+table.mini small { display: block; color: var(--muted); font-size: .72rem; line-height: 1.35 }
+table.cfg td input { width: 90px }
+td.pickd { background: var(--baht-soft); color: var(--baht); font-weight: 600 }
+.tot:not(.z):not(.b) { background: var(--panel-2); color: var(--muted) }
+.steps { margin: 0; padding-left: 20px; font-size: .85rem; color: var(--muted) }
+.usecraft { display: flex; gap: 8px; align-items: center; font-size: .9rem }
+details summary { cursor: pointer; font-size: .85rem; color: var(--muted) }
+details[open] { display: grid; gap: 8px }
+@media (max-width: 520px) { table.mini td input { width: 96px } .craftbtn { margin: 4px 0 0; display: table } }
