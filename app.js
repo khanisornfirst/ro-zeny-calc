@@ -222,8 +222,10 @@ function renderCraft() {
   const priceIn = k => `<input type="number" class="num" min="0" data-cprice="${esc(k)}" value="${state.prices[k] ?? ""}" placeholder="ราคา" aria-label="ราคา ${esc(k)}">`;
   const HOW = { craft: "ทำจากขั้นก่อน", ore: "ทำจากแร่", market: "ซื้อตลาด" };
 
-  const priceRows = [tiers[0].from, ...tiers.flatMap(t => [t.ore, ...(t === tiers[top] ? [] : [t.name])])].map(k =>
-    `<tr><td><div class="namecell">${slot(k)}<span>${esc(k)}</span></div></td><td class="r">${priceIn(k)}</td></tr>`).join("");
+  // ตารางราคาแบบย่อ: แถวละเกรด มีช่องราคาแร่กับราคาหิน
+  const priceRows = `<tr><td><div class="namecell">${slot(tiers[0].from)}<span>${esc(tiers[0].from)}</span></div></td><td class="r" colspan="2">${priceIn(tiers[0].from)}</td></tr>` +
+    tiers.map(t => `<tr><td><div class="namecell">${slot(t.name)}<span>${esc(shortGrade(t.name))}</span></div></td>
+      <td class="r">${priceIn(t.ore)}</td><td class="r">${priceIn(t.name)}</td></tr>`).join("");
 
   const stepRows = tiers.map((t, i) => {
     const b = best[i], src = i === 0 ? `${esc(t.from)} ×${t.qty}` : `${esc(shortGrade(tiers[i - 1].name))} ×${t.qty}`;
@@ -239,7 +241,7 @@ function renderCraft() {
     const ex = expand(sol, top, n), buyTotal = Object.entries(ex.buy).reduce((s, [k, q]) => s + q * price(k), 0);
     const buyRows = Object.entries(ex.buy).map(([k, q]) =>
       `<tr><td><div class="namecell">${slot(k)}<span>${esc(k)}</span></div></td><td class="r num"><strong>${fmt(q)}</strong></td><td class="r num">${fmt(price(k))}</td><td class="r num">${fmt(q * price(k))}</td></tr>`).join("");
-    const stepsTxt = ex.steps.map(([t, q, how]) => `<li>${how === "ore" ? `แลกแร่เป็น` : `รวมเป็น`} <strong>${esc(shortGrade(t.name))}</strong> ${fmt(q)} ก้อน · ค่า NPC ${fmt(q * (how === "ore" ? t.oreFee : t.fee))}z</li>`).join("");
+    const stepsTxt = ex.steps.map(([t, q, how]) => `<li>${how === "ore" ? `แลกแร่เป็น` : t.from ? `แลก ${esc(t.from)} เป็น` : `รวมเป็น`} <strong>${esc(shortGrade(t.name))}</strong> ${fmt(q)} ก้อน · ค่า NPC ${fmt(q * (how === "ore" ? t.oreFee : t.fee))}z</li>`).join("");
     const diff = market == null ? null : market * n - make.cost * n;
     result = `
       <h4>ของที่ต้องเตรียม (ทำ ${fmt(n)} ก้อน)</h4>
@@ -264,9 +266,9 @@ function renderCraft() {
       <label class="count">ทำ <input type="number" class="num" id="craftN" min="1" value="${n}"> ก้อน</label></div>
 
     <h4>1. ใส่ราคาตลาด (zeny ต่อชิ้น) <small class="muted">ไม่รู้ราคาอันไหนเว้นว่างไว้ จะไม่เอาทางนั้นมาคิด</small></h4>
-    <div class="tablewrap"><table class="mini"><tbody>${priceRows}
-      <tr><td><div class="namecell">${slot(craftCur.name)}<span>${esc(craftCur.name)} <small>(ราคาตลาด ไว้เทียบ)</small></span></div></td><td class="r">${priceIn(craftCur.name)}</td></tr>
-    </tbody></table></div>
+    <div class="tablewrap"><table class="mini prices">
+      <thead><tr><th>เกรด</th><th class="r">ราคาแร่</th><th class="r">ราคาหิน</th></tr></thead>
+      <tbody>${priceRows}</tbody></table></div>
 
     <h4>2. ต้นทุนต่อก้อนแต่ละขั้น <small class="muted">ช่องที่ไฮไลต์คือทางที่ถูกสุด</small></h4>
     <div class="tablewrap"><table class="mini">
