@@ -128,3 +128,5 @@ select { background: var(--panel-2); border: 1px solid var(--line); border-radiu
 .tabs button { border-radius: 6px 6px 0 0; border-bottom: 0; padding: 8px 18px; font: 500 .95rem var(--display); background: var(--panel) }
 .tabs button[aria-selected="true"] { background: var(--chrome); color: var(--chrome-fg); border-color: var(--chrome) }
 [hidden] { display: none !important }
+.chips.views { margin-bottom: 6px }
+.chips.views button { font-size: .9rem; padding: 4px 14px }

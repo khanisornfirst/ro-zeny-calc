@@ -124,7 +124,7 @@ function renderSheet() {
 
 // ---------- Enchant อาวุธ Dim Glacier ----------
 function enchOpts(item) {
-  const o = { s4: true, s3: true, from: 0, to: item.levels.length, coupon: false, ...state.ench[item.name] };
+  const o = { view: "s4", s4: true, s3: true, from: 0, to: item.levels.length, coupon: false, ...state.ench[item.name] };
   o.to = Math.max(o.from, o.to);
   return o;
 }
@@ -132,11 +132,16 @@ function enchOpts(item) {
 function renderEnchant(item) {
   const o = enchOpts(item);
   const lvName = i => (i === 0 ? "ยังไม่มี" : `Lv${i}`);
-  const steps = [];
-  for (const s of item.slots) if (o[s.id])
-    steps.push({ label: s.label, mats: [...s.mats, o.coupon ? [item.couponName, s.coupon] : [item.brilliantName, s.brilliant]] });
-  for (let i = o.from; i < o.to; i++)
-    steps.push({ label: i === 0 ? "ช่อง 2 การันตี Lv1" : `ช่อง 2 Lv${i} → Lv${i + 1}`, mats: item.levels[i] });
+  const all = o.view === "all", slot2 = all || o.view === "s2";
+  // แต่ละช่องเป็นกลุ่มขั้น ดูทีละช่องหรือรวมทั้งหมดก็ได้
+  const groups = [];
+  for (const s of item.slots) if (all ? o[s.id] : o.view === s.id)
+    groups.push({ label: s.label, steps: [{ label: s.label, mats: [...s.mats, o.coupon ? [item.couponName, s.coupon] : [item.brilliantName, s.brilliant]] }] });
+  if (slot2 && o.to > o.from) groups.push({ label: `ช่อง 2 (${lvName(o.from)} → Lv${o.to})`, steps: Array.from({ length: o.to - o.from }, (_, k) => {
+    const i = o.from + k;
+    return { label: i === 0 ? "ช่อง 2 การันตี Lv1" : `ช่อง 2 Lv${i} → Lv${i + 1}`, mats: item.levels[i] };
+  }) });
+  const steps = groups.flatMap(g => g.steps);
 
   const need = new Map();
   for (const st of steps) for (const [n, q] of st.mats) need.set(n, (need.get(n) || 0) + q);
@@ -155,18 +160,23 @@ function renderEnchant(item) {
   const baht = total / 1e6 * (Number(state.rate) || 0);
   const lvOpts = (from, sel, min) => Array.from({ length: item.levels.length + 1 }, (_, i) => i)
     .filter(i => i >= min).map(i => `<option value="${i}"${i === sel ? " selected" : ""}>${lvName(i)}</option>`).join("");
-  const stepList = steps.map(st => `<li>${esc(st.label)} <span class="muted">· ${fmt(cost(st.mats))} z</span></li>`).join("");
+  const views = [...item.slots.map(s => [s.id, s.label.replace(/ \(.*\)/, "")]), ["s2", "ช่อง 2"], ["all", "รวมทั้งหมด"]];
+  const breakdown = all
+    ? groups.map(g => `<li>${esc(g.label)} <span class="muted">· ${fmt(g.steps.reduce((t, st) => t + cost(st.mats), 0))} z</span></li>`).join("")
+    : slot2 ? steps.map(st => `<li>${esc(st.label)} <span class="muted">· ${fmt(cost(st.mats))} z</span></li>`).join("") : "";
 
   $("#sheet").innerHTML = `
     <div class="head">
       ${slot(item.name, { big: true, pick: true })}
       <div><h3>${esc(item.name)}</h3><div class="meta"><span class="tag">NPC ${esc(item.npc)}</span><span class="tag">0z ทุกขั้น ใช้แค่วัตถุดิบ</span></div></div>
     </div>
+    <div class="chips views">${views.map(([id, label]) =>
+      `<button type="button" data-ench-view="${id}" aria-pressed="${id === o.view}">${esc(label)}</button>`).join("")}</div>
     <div class="enchopts">
-      ${item.slots.map(s => `<label class="usecraft"><input type="checkbox" data-ench="${s.id}" ${o[s.id] ? "checked" : ""}> ${esc(s.label)}</label>`).join("")}
-      <label class="usecraft">ช่อง 2 ตอนนี้ <select data-ench="from">${lvOpts(0, o.from, 0)}</select>
-        อัปถึง <select data-ench="to">${lvOpts(0, o.to, o.from)}</select></label>
-      <label class="usecraft"><input type="checkbox" data-ench="coupon" ${o.coupon ? "checked" : ""}> ช่อง 4/3 ใช้ตั๋ว Enchant Coupon แทนขวดส้ม (Brilliant)</label>
+      ${all ? item.slots.map(s => `<label class="usecraft"><input type="checkbox" data-ench="${s.id}" ${o[s.id] ? "checked" : ""}> รวม${esc(s.label)}</label>`).join("") : ""}
+      ${slot2 ? `<label class="usecraft">ช่อง 2 ตอนนี้ <select data-ench="from">${lvOpts(0, o.from, 0)}</select>
+        อัปถึง <select data-ench="to">${lvOpts(0, o.to, o.from)}</select></label>` : ""}
+      ${o.view !== "s2" ? `<label class="usecraft"><input type="checkbox" data-ench="coupon" ${o.coupon ? "checked" : ""}> ช่อง 4/3 ใช้ตั๋ว Enchant Coupon แทนขวดส้ม (Brilliant)</label>` : ""}
     </div>
     ${steps.length ? `
     <div class="tablewrap"><table>
@@ -174,10 +184,10 @@ function renderEnchant(item) {
       <tbody>${rows}</tbody>
     </table></div>
     <div class="totals">
-      <div class="tot z"><span>รวมทั้งหมด</span><strong>${fmt(total)} z</strong></div>
+      <div class="tot z"><span>${all ? "รวมทั้งหมด" : `รวม${esc(views.find(v => v[0] === o.view)[1])}`}</span><strong>${fmt(total)} z</strong></div>
       <div class="tot b"><span>คิดเป็นเงินบาท${state.rate === "" ? " (ยังไม่ได้ใส่เรต)" : ""}</span><strong>฿${fmt(baht, 2)}</strong></div>
     </div>
-    <h4>แยกตามขั้น</h4><ol class="steps">${stepList}</ol>` : `<p class="note">ยังไม่ได้เลือกขั้นไหนเลย</p>`}
+    ${breakdown ? `<h4>${all ? "แยกตามช่อง" : "แยกตามขั้น"}</h4><ol class="steps">${breakdown}</ol>` : ""}` : `<p class="note">ยังไม่ได้เลือกขั้นไหนเลย</p>`}
     <p class="note">${missing ? `ยังไม่ได้ใส่ราคา ${missing} รายการ · ` : ""}ราคาที่กรอกใช้ร่วมกันทุกสูตร
     · ข้อมูลช่อง 2 จาก <a href="https://ro.gnjoy.in.th/dim-glacier-weapon/" target="_blank" rel="noopener">gnjoy</a></p>`;
 }
@@ -208,6 +218,8 @@ $("#sheet").addEventListener("change", e => {
 });
 $("#sheet").addEventListener("click", e => {
   if (e.target.id === "delItem") { state.custom = state.custom.filter(i => i.name !== state.current); state.current = "Little Garden-LT"; render(); return }
+  const v = e.target.closest("[data-ench-view]");
+  if (v) { (state.ench[state.current] ||= {}).view = v.dataset.enchView; render(); return }
   const g = e.target.closest("[data-grade]"); if (g) { state.grade[state.current] = Number(g.dataset.grade); render(); return }
   const c = e.target.closest("[data-craft]"); if (c) { openCraft(c.dataset.craft, Number(c.dataset.need) || 1); return }
   const s = e.target.closest("[data-icon]"); if (s) pickIcon(s.dataset.icon);
