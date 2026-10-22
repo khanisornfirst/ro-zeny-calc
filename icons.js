@@ -2,6 +2,10 @@
 window.ICON_IDS = {
  "6th Anniversary Ayothaya Ring [1]": 490966,
  "Abyssal Snake Shield [1]": 460126,
+ "Accessory Enhancement Ore (Low Grade)": 1000426,
+ "Accessory Enhancement Ore (Medium Grade)": 1000427,
+ "Accessory Enhancement Ore (High Grade)": 1000428,
+ "Accessory Enhancement Ore (Supreme Grade)": 1000429,
  "Accessory Enhancement Stone (High Grade)": 1000440,
  "Accessory Enhancement Stone (Low Grade)": 1000438,
  "Accessory Enhancement Stone (Medium Grade)": 1000439,
