@@ -100,7 +100,9 @@ td input { width: 130px; text-align: right }
 .craftbtn { display: inline-block; margin-left: 8px; font-size: .72rem; padding: 1px 8px; border-radius: 99px; background: var(--zeny-soft); color: var(--zeny); border-color: transparent; white-space: nowrap }
 .madetag { display: block; font-size: .7rem; color: var(--zeny) }
 .muted { color: var(--muted); font-weight: 400 }
-dialog#craft { padding: 0; width: min(760px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); color: var(--fg) }
+dialog#craft { padding: 0; width: min(760px, calc(100vw - 32px)); height: auto; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); color: var(--fg); overflow: hidden }
+dialog#craft[open] { display: flex; flex-direction: column }
+#craftBody { flex: 1 1 auto; min-height: 0; grid-auto-rows: max-content; align-content: start; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch }
 dialog#craft::backdrop { background: rgb(10 14 24 / .55) }
 dialog#craft > h2 { display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1 }
 #craftClose { background: none; border: 0; color: inherit; font-size: 1.2rem; line-height: 1; padding: 0 4px }
@@ -117,5 +119,4 @@ td.pickd { background: var(--baht-soft); color: var(--baht); font-weight: 600 }
 details summary { cursor: pointer; font-size: .85rem; color: var(--muted) }
 details[open] { display: grid; gap: 8px }
 @media (max-width: 520px) { table.mini td input { width: 96px } .craftbtn { margin: 4px 0 0; display: table } }
-dialog#craft { overflow-y: auto; overscroll-behavior: contain }
 table.prices td { padding-block: 4px }
