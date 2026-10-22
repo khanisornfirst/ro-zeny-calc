@@ -1,0 +1,96 @@
+/* Layout: item list on the left like an inventory window, recipe sheet on the right; stacks on phones */
+:root {
+  --bg: #e9edf5;
+  --panel: #ffffff;
+  --panel-2: #f3f5fa;
+  --line: #cdd5e4;
+  --fg: #1f2638;
+  --muted: #5d6680;
+  --chrome: #5b6fa8;
+  --chrome-fg: #ffffff;
+  --zeny: #a8740c;
+  --zeny-soft: #fbf1d8;
+  --baht: #1d7a52;
+  --baht-soft: #e0f3ea;
+  --focus: #3d63d6;
+  --display: "Mitr", "IBM Plex Sans Thai", system-ui, sans-serif;
+  --body: "IBM Plex Sans Thai", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141824; --panel: #1d2232; --panel-2: #252b3e; --line: #343c55; --fg: #e6e9f2; --muted: #9aa3bd;
+    --chrome: #3c4c80; --chrome-fg: #f1f3fa; --zeny: #e8b84a; --zeny-soft: #3a2f16; --baht: #5fd19c; --baht-soft: #173528; --focus: #8aa6ff;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-block: 20px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+a { color: var(--focus) }
+img { max-width: 100% }
+[hidden] { display: none !important }
+.wrap { max-width: 1100px; margin: 0 auto; display: grid; gap: 16px }
+header h1 { font-family: var(--display); font-weight: 500; font-size: 1.6rem; margin: 0; text-wrap: balance }
+header p { margin: 2px 0 0; color: var(--muted) }
+.grid { display: grid; grid-template-columns: 310px 1fr; gap: 16px; align-items: start }
+.side { display: grid; gap: 16px; min-width: 0 }
+@media (max-width: 780px) { .grid { grid-template-columns: 1fr } }
+
+.win { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; min-width: 0 }
+.win > h2 { margin: 0; background: var(--chrome); color: var(--chrome-fg); font: 500 0.85rem var(--display); letter-spacing: .04em; padding: 6px 12px }
+.in { padding: 12px; display: grid; gap: 10px }
+.in.flat { padding: 0 }
+
+input, button { font: inherit; color: inherit }
+input[type="text"], input[type="number"] { width: 100%; background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; min-width: 0 }
+input:focus-visible, button:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px }
+button { cursor: pointer; border: 1px solid var(--line); background: var(--panel-2); border-radius: 4px; padding: 6px 10px }
+button:hover { border-color: var(--focus) }
+button.primary { background: var(--chrome); color: var(--chrome-fg); border-color: var(--chrome) }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums }
+
+.chips { display: flex; flex-wrap: wrap; gap: 4px }
+.chips button { font-size: .78rem; padding: 2px 9px; border-radius: 99px }
+.chips button[aria-pressed="true"] { background: var(--chrome); color: var(--chrome-fg); border-color: var(--chrome) }
+
+.list { display: grid; gap: 2px; max-height: 480px; overflow-y: auto }
+.list button { display: flex; align-items: center; gap: 10px; text-align: left; border: 1px solid transparent; background: none; padding: 5px 6px }
+.list button[aria-pressed="true"] { background: var(--panel-2); border-color: var(--line) }
+.list small { color: var(--muted); display: block; font-size: .76rem }
+
+.slot { width: 32px; height: 32px; flex: none; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--line);
+  display: grid; place-items: center; font: 500 .8rem var(--display); color: var(--muted); overflow: hidden; position: relative }
+.slot img { width: 100%; height: 100%; object-fit: contain }
+.slot.big { width: 84px; height: 84px; font-size: 1.6rem }
+.slot.pick { cursor: pointer }
+.slot.pick:hover::after { content: "ใส่รูป"; position: absolute; inset: auto 0 0; font-size: .6rem; background: var(--chrome); color: var(--chrome-fg); text-align: center }
+
+.head { display: flex; gap: 14px; align-items: center; flex-wrap: wrap }
+.head h3 { margin: 0; font: 500 1.3rem var(--display); text-wrap: balance }
+.head .meta { color: var(--muted); font-size: .85rem; display: flex; flex-wrap: wrap; gap: 6px; align-items: center }
+.count { display: flex; align-items: center; gap: 8px; margin-left: auto }
+.count input { width: 80px }
+.tag { font-size: .72rem; border: 1px solid var(--line); border-radius: 99px; padding: 0 8px; color: var(--muted) }
+
+.tablewrap { overflow-x: auto }
+table { width: 100%; border-collapse: collapse; min-width: 560px }
+th { text-align: left; font-weight: 500; font-size: .78rem; color: var(--muted); letter-spacing: .03em; padding: 6px 8px; border-bottom: 1px solid var(--line) }
+td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: middle }
+td.r, th.r { text-align: right }
+.namecell { display: flex; align-items: center; gap: 8px }
+td input { width: 130px; text-align: right }
+
+.totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px }
+.tot { border-radius: 6px; padding: 10px 14px }
+.tot.z { background: var(--zeny-soft); color: var(--zeny) }
+.tot.b { background: var(--baht-soft); color: var(--baht) }
+.tot span { font-size: .8rem; display: block }
+.tot strong { font: 500 1.5rem var(--mono); font-variant-numeric: tabular-nums; word-break: break-all }
+
+.rate { display: flex; flex-wrap: wrap; align-items: center; gap: 8px }
+.rate input { width: 110px }
+.note { font-size: .8rem; color: var(--muted); margin: 0 }
+.matrow { display: grid; grid-template-columns: 1fr 80px 32px; gap: 6px }

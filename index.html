@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<title>RO Zeny Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>RO Zeny Calculator</h1>
+    <p>สูตร Reform ไอเทม LT ของ RO GGT เลือกไอเทม ใส่ราคา zeny แล้วดูต้นทุนเป็น zeny และเงินบาท</p>
+  </header>
+
+  <div class="grid">
+    <div class="side">
+      <section class="win">
+        <h2>ไอเทม</h2>
+        <div class="in">
+          <input type="text" id="search" placeholder="ค้นหาไอเทม…" aria-label="ค้นหาไอเทม">
+          <div class="chips" id="types"></div>
+          <div class="list" id="list"></div>
+        </div>
+      </section>
+
+      <section class="win">
+        <h2>อัตราแลก</h2>
+        <div class="in">
+          <div class="rate">
+            <span class="num">1,000,000 z =</span>
+            <input type="number" id="rate" min="0" step="0.01" aria-label="บาทต่อ 1 ล้าน zeny">
+            <span>บาท</span>
+          </div>
+          <p class="note">ใส่เรตที่คุณซื้อขายจริง</p>
+        </div>
+      </section>
+
+      <section class="win">
+        <h2>เพิ่มไอเทมเอง</h2>
+        <div class="in">
+          <form id="addForm" class="in flat">
+            <input type="text" id="newName" placeholder="ชื่อไอเทม" required>
+            <div id="newMats" class="in flat"></div>
+            <button type="button" id="addMat">+ วัตถุดิบ</button>
+            <button type="submit" class="primary">บันทึกไอเทม</button>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <section class="win">
+      <h2>สูตร</h2>
+      <div class="in" id="sheet"></div>
+    </section>
+  </div>
+
+  <footer class="note">
+    ข้อมูลสูตรจาก <a href="https://ro.gnjoy.in.th/item-gradereform/" target="_blank" rel="noopener">ro.gnjoy.in.th/item-gradereform</a>
+    · ราคาและไอเทมที่เพิ่มเองเก็บไว้ในเบราว์เซอร์นี้เท่านั้น
+  </footer>
+</div>
+
+<input type="file" id="iconFile" accept="image/*" hidden>
+<script src="recipes.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
