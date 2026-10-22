@@ -15,6 +15,7 @@ const state = {
   counts: saved.counts || {},
   craft: saved.craft || {},   // แก้สูตรหิน: { ชื่อหิน: { qty, fee, oreQty, oreFee } }
   useCraft: saved.useCraft || {}, // วัตถุดิบที่ให้ใช้ต้นทุนทำเองแทนราคาตลาด
+  showOre: saved.showOre || false,  // เปิดทางแลกแร่เป็นหินด้วย
   type: "all",
 };
 
@@ -184,7 +185,7 @@ function solveChain(name) {
   const best = [];
   tiers.forEach((t, i) => {
     const input = i === 0 ? price(t.from) : best[i - 1].cost;
-    const ore = price(t.ore);
+    const ore = state.showOre ? price(t.ore) : null;
     const opts = [
       { how: "craft", cost: input == null ? null : t.qty * input + t.fee },
       { how: "ore", cost: ore == null ? null : t.oreQty * ore + t.oreFee },
@@ -222,21 +223,22 @@ function renderCraft() {
   const priceIn = k => `<input type="number" class="num" min="0" data-cprice="${esc(k)}" value="${state.prices[k] ?? ""}" placeholder="ราคา" aria-label="ราคา ${esc(k)}">`;
   const HOW = { craft: "ทำจากขั้นก่อน", ore: "ทำจากแร่", market: "ซื้อตลาด" };
 
-  // ตารางราคาแบบย่อ: แถวละเกรด มีช่องราคาแร่กับราคาหิน
-  const priceRows = `<tr><td><div class="namecell">${slot(tiers[0].from)}<span>${esc(tiers[0].from)}</span></div></td><td class="r" colspan="2">${priceIn(tiers[0].from)}</td></tr>` +
-    tiers.map(t => `<tr><td><div class="namecell">${slot(t.name)}<span>${esc(shortGrade(t.name))}</span></div></td>
-      <td class="r">${priceIn(t.ore)}</td><td class="r">${priceIn(t.name)}</td></tr>`).join("");
+  // ตารางราคาแบบย่อ: แถวละเกรด ช่องราคาหิน (+ ช่องราคาแร่ ถ้าเปิดทางแร่)
+  const ore = state.showOre;
+  const priceRows = `<tr><td><div class="namecell">${slot(tiers[0].from)}<span>${esc(tiers[0].from)}<small>ใช้แลกเป็นหิน Low</small></span></div></td>${ore ? "<td></td>" : ""}<td class="r">${priceIn(tiers[0].from)}</td></tr>` +
+    tiers.map(t => `<tr><td><div class="namecell">${slot(t.name)}<span>หิน ${esc(shortGrade(t.name))}</span></div></td>
+      ${ore ? `<td class="r">${priceIn(t.ore)}</td>` : ""}<td class="r">${priceIn(t.name)}</td></tr>`).join("");
 
   const stepRows = tiers.map((t, i) => {
     const b = best[i], src = i === 0 ? `${esc(t.from)} ×${t.qty}` : `${esc(shortGrade(tiers[i - 1].name))} ×${t.qty}`;
     const cell = how => { const o = b.opts.find(o => o.how === how);
       return `<td class="r num${b.how === how ? " pickd" : ""}">${how === "market" && i === top ? `<span class="muted">เทียบด้านล่าง</span>` : z(o.cost)}</td>` };
-    return `<tr><td><div class="namecell">${slot(t.name)}<span>${esc(shortGrade(t.name))}<small>${src} + ${fmt(t.fee)}z<br>หรือ แร่ ×${t.oreQty} + ${fmt(t.oreFee)}z</small></span></div></td>
-      ${cell("craft")}${cell("ore")}${cell("market")}</tr>`;
+    return `<tr><td><div class="namecell">${slot(t.name)}<span>${esc(shortGrade(t.name))}<small>${src} + ${fmt(t.fee)}z${ore ? `<br>หรือ แร่ ×${t.oreQty} + ${fmt(t.oreFee)}z` : ""}</small></span></div></td>
+      ${cell("craft")}${ore ? cell("ore") : ""}${cell("market")}</tr>`;
   }).join("");
 
   let result;
-  if (make.cost == null) result = `<p class="note">ใส่ราคา ${esc(tiers[0].from)} หรือราคาแร่ ด้านบนก่อน ถึงจะคิดต้นทุนได้</p>`;
+  if (make.cost == null) result = `<p class="note">ใส่ราคา ${esc(tiers[0].from)}${ore ? " หรือราคาแร่" : ""} ด้านบนก่อน ถึงจะคิดต้นทุนได้</p>`;
   else {
     const ex = expand(sol, top, n), buyTotal = Object.entries(ex.buy).reduce((s, [k, q]) => s + q * price(k), 0);
     const buyRows = Object.entries(ex.buy).map(([k, q]) =>
@@ -265,14 +267,15 @@ function renderCraft() {
       <div><h3>${esc(craftCur.name)}</h3><div class="meta">ทำที่ NPC ${esc(sol.chain.npc)} (ห้องแล็บ Rekenberg)</div></div>
       <label class="count">ทำ <input type="number" class="num" id="craftN" min="1" value="${n}"> ก้อน</label></div>
 
-    <h4>1. ใส่ราคาตลาด (zeny ต่อชิ้น) <small class="muted">ไม่รู้ราคาอันไหนเว้นว่างไว้ จะไม่เอาทางนั้นมาคิด</small></h4>
+    <h4>1. ใส่ราคาตลาด (zeny ต่อชิ้น) <small class="muted">ใส่แค่ Shadowdecon ก็คิดได้แล้ว ช่องอื่นใส่เฉพาะที่รู้ราคา</small></h4>
     <div class="tablewrap"><table class="mini prices">
-      <thead><tr><th>เกรด</th><th class="r">ราคาแร่</th><th class="r">ราคาหิน</th></tr></thead>
+      <thead><tr><th>ของ</th>${ore ? `<th class="r">ราคาแร่ (Ore)<small>เอาไปแลกเป็นหิน</small></th>` : ""}<th class="r">ราคาในตลาด<small>ถ้าซื้อมาใช้เลย</small></th></tr></thead>
       <tbody>${priceRows}</tbody></table></div>
+    <label class="usecraft"><input type="checkbox" id="showOre" ${ore ? "checked" : ""}> มี Enhancement Ore ขายด้วย (แลกแร่เป็นหินได้อีกทาง)</label>
 
     <h4>2. ต้นทุนต่อก้อนแต่ละขั้น <small class="muted">ช่องที่ไฮไลต์คือทางที่ถูกสุด</small></h4>
     <div class="tablewrap"><table class="mini">
-      <thead><tr><th>ขั้น · สูตร</th><th class="r">ทำจากขั้นก่อน</th><th class="r">ทำจากแร่</th><th class="r">ซื้อตลาด</th></tr></thead>
+      <thead><tr><th>ขั้น · สูตร</th><th class="r">ทำจากขั้นก่อน</th>${ore ? `<th class="r">ทำจากแร่</th>` : ""}<th class="r">ซื้อตลาด</th></tr></thead>
       <tbody>${stepRows}</tbody></table></div>
 
     ${result}
@@ -293,6 +296,7 @@ $("#craft").addEventListener("change", e => {
   if (t.dataset.cprice) state.prices[t.dataset.cprice] = t.value === "" ? "" : Number(t.value);
   if (t.id === "craftN") craftCur.n = Math.max(1, Math.floor(Number(t.value) || 1));
   if (t.id === "useCraft") state.useCraft[craftCur.name] = t.checked;
+  if (t.id === "showOre") state.showOre = t.checked;
   if (t.dataset.cfg) (state.craft[t.dataset.cfg] ||= {})[t.dataset.key] = Math.max(0, Number(t.value) || 0);
   renderCraft(); renderSheet(); save();
 });
