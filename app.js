@@ -16,12 +16,10 @@ const state = {
   type: "all",
 };
 
-// Images we know from the source page: result items and their base items
-const knownImg = {};
-for (const it of window.RECIPES) {
-  if (it.img) knownImg[it.name] = it.img;
-  if (it.baseImg) knownImg[it.base] = it.baseImg;
-}
+// Small in-game icons from divine-pride by item ID; an LT item looks like its base item
+const iconIds = { ...window.ICON_IDS };
+for (const it of window.RECIPES) if (iconIds[it.base] && !iconIds[it.name]) iconIds[it.name] = iconIds[it.base];
+const iconUrl = name => iconIds[name] ? `https://static.divine-pride.net/images/items/item/${iconIds[name]}.png` : "";
 
 const $ = s => document.querySelector(s);
 const fmt = (n, d = 0) => (isFinite(n) ? n : 0).toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: d });
@@ -30,7 +28,7 @@ const allItems = () => [...window.RECIPES, ...state.custom];
 const findItem = name => allItems().find(i => i.name === name);
 
 function slot(name, opts = {}) {
-  const src = state.icons[name] || knownImg[name];
+  const src = state.icons[name] || iconUrl(name);
   const letter = esc((name.trim()[0] || "?").toUpperCase());
   const pick = opts.pick ? ` pick" data-icon="${esc(name)}" role="button" tabindex="0" title="คลิกเพื่อเปลี่ยนรูป` : "";
   const img = src ? `<img alt="" loading="lazy" src="${esc(src)}" onerror="this.replaceWith(document.createTextNode('${letter}'))">` : letter;
@@ -88,7 +86,7 @@ function renderSheet() {
   $("#sheet").innerHTML = `
     <div class="head">
       ${slot(item.name, { big: true, pick: true })}
-      <div><h3>${esc(item.name)}</h3><div class="meta">${tags}</div></div>
+      <div><h3>${esc(item.name)}</h3><div class="meta">${tags}${item.img ? `<a href="${esc(item.img)}" target="_blank" rel="noopener">ดูการ์ดไอเทม</a>` : ""}</div></div>
       <label class="count">ทำ <input type="number" class="num" id="crafts" min="1" value="${crafts}"> ชิ้น</label>
     </div>
     ${gradeChips}
