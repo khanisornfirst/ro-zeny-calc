@@ -21,7 +21,7 @@ const state = {
   last: saved.last || {},     // ไอเทมล่าสุดของแต่ละแท็บ
   type: "all",
 };
-const TABS = { reform: "Reform LT", enchant: "Enchant" };
+const TABS = { reform: "Reform", enchant: "Enchant" };
 
 // Small in-game icons from divine-pride by item ID; an LT item looks like its base item
 const iconIds = { ...window.ICON_IDS };
@@ -99,8 +99,9 @@ function renderSheet() {
     `<button type="button" data-grade="${i}" aria-pressed="${i === gi}">${esc(GRADE_TH[r.grade] || r.grade)}</button>`).join("")}</div>` : "";
   const tags = [
     recipe.grade && !gradeChips ? GRADE_TH[recipe.grade] || recipe.grade : "",
-    recipe.refine ? `ต้องตีบวก ${recipe.refine} ขึ้นไป` : "",
-    item.custom ? "ไอเทมของฉัน" : "Reform LT",
+    recipe.refine ? `ต้องตีบวก ${recipe.refine}${recipe.refine.includes("ถึง") ? "" : " ขึ้นไป"}` : "",
+    recipe.effect ? `ค่าตีบวกหลัง Reform ${recipe.effect}` : "",
+    item.custom ? "ไอเทมของฉัน" : "Reform",
   ].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join("");
 
   $("#sheet").innerHTML = `
